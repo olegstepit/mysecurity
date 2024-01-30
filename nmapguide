@@ -1,0 +1,85 @@
+Nmap (Network Mapper)
+
+Nmap is a powerful open-source network scanning tool used to discover hosts and services on a computer network, creating a "map" of the network. It's designed to be flexible and efficient, providing a variety of scanning techniques for network exploration and security auditing.
+Key Features:
+
+    Host Discovery:
+        Nmap can discover hosts on a network using various techniques, such as ICMP echo requests, TCP and UDP scanning, and ARP requests.
+
+    Port Scanning:
+        Nmap can scan for open ports on a target host, providing information about the services running on those ports.
+        Techniques include TCP connect scanning, SYN/ACK scanning, UDP scanning, and more.
+
+    Service Version Detection:
+        Nmap can attempt to determine the version of services running on open ports. This helps in identifying vulnerabilities associated with specific software versions.
+
+    OS Fingerprinting:
+        Nmap can attempt to identify the operating system of the target host by analyzing responses to various network probes.
+
+    Scriptable Interaction:
+        Nmap has a scripting engine (Nmap Scripting Engine - NSE) that allows users to write and run scripts to automate tasks and gather additional information during scanning.
+
+    Output Formats:
+        Nmap supports various output formats, including plain text, XML, and grepable output. This flexibility allows users to analyze results in different ways.
+
+    Aggressive Scanning Options:
+        Nmap offers aggressive scanning options (-A) that combine various techniques to gather more information about the target, including service versions, script scanning, and traceroute.
+
+    Stealth Scanning:
+        Nmap provides options for stealthy scanning, such as SYN scan, to reduce the chance of detection by intrusion detection systems.
+
+    Timing and Performance Options:
+        Users can control the timing and performance of scans to balance thoroughness and speed.
+
+Basic Usage:
+
+Simple Scan:
+
+bash
+
+nmap target_ip
+
+Scan Specific Ports:
+
+bash
+
+nmap -p 80,443 target_ip
+
+Aggressive Scan with Service Version Detection:
+
+bash
+
+nmap -A target_ip
+
+OS Fingerprinting:
+
+bash
+
+    nmap -O target_ip
+
+Examples:
+
+    Discover Hosts on a Network:
+
+    bash
+
+nmap -sn 192.168.1.0/24
+
+Scan Top 1000 Ports:
+
+bash
+
+nmap target_ip
+
+Scan All TCP Ports:
+
+bash
+
+nmap -p- target_ip
+
+Scan UDP Ports:
+
+bash
+
+    nmap -sU target_ip
+
