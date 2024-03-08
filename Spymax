@@ -1,0 +1,75 @@
+Spymax is a mobile Remote Administration Tool (RAT) that enables an attacker to control victims’ devices through an Android malware. Once the malware is installed on a phone, the attacker can execute many attacks that highly impact the confidentiality and integrity of the victim’s data, as well as the victim’s privacy. It is powerful, widely available, and does not require root privileges on the victim’s device. In this blogpost, I show the capabilities of this RAT and analyze how its Android malware works.
+
+
+Reports about Spymax go back to at least 2019, but it got more popular in 2020. Remember 2020? Probably not your favorite year, unless you’re a Corona virus. Attackers exploited the panic to trick victims to install COVID-related apps injected with Spymax malware. Since then, it kept getting popular. It is alarming that Spymax RAT is widely available on the internet. Its 4th version Spymaxv4 can be easily downloaded from several forums and websites. Any inexperienced attacker can install the “cracked” Spymax RAT on their computer and rely on their social engineering skills to infect victims’ phones. But keep in mind that these “cracked” Spymax versions are probably not the original RAT and that they probably contain other malware that might infect the attacker’s computer.
+
+Spymax’s arsenal of attacks include:
+
+Stream live video from the phone’s cameras
+Capture live audio from the phone’s microphone
+Track user’s location
+Ransomware: encrypt user’s data
+Capture the victim’s secrets using keylogging and capturing clipboards
+Upload and download files from the mobile device
+Capture user’s SMS, contacts, installed apps, and call logs
+Initiate calls from the victim’s phone
+Execute some commands on the victim’s phone
+None of these attacks require root privileges, therefore they work successfully on unrooted devices. Moreover, Spymax works pretty well on Android 9 and below. However, my attacks on an Android 10 device were also successful.
+
+Setup
+In my research I used Spymaxv2 and Spymaxv4 RAT. Both versions run on Windows only, therefore I ran them on a Windows 10 Virtual Machine. I also used 2 devices to simulate victims: The first is a rooted Nexus 5 device running Android 8, and the other is a Pixel 4a device running Android 10. The VM and both devices are connected to an access point running on my host.
+
+RAT and C&C
+Spymax RAT is very easy to use. The main window displays the connected victims and allows the attacker to execute attacks with a right click. Of course, Spymax RAT comes with a Command and Control Server (C&C), which allows the attacker to send commands to the malware.
+
+
+Spymax RAT on an attacker’s computer
+The malicious app (malware)
+The attacker can build Spymax malware from the Build menu. Spymax offers to build a stand-alone APKs that contain only the malware, or bind the malware to a benign app’s APK file. In this blogpost, I analyze the stand-alone APK. In both cases, the address and the port of the C&C are hard-coded in the malware. Additionally, the attacker can change the package name of the app.
+
+After building the malicious app that contains the malware, it is up to the attacker’s social engineering skills to get the app installed on the victim’s device. For example, phishing or spear phishing attacks can trick victims to install the malware on their devices, like what happened in 2020. Alternatively, if the attacker has a physical access to the victim’s device, they can install the malware on it and grant it the necessary permissions. This is a common way to install spyware after all.
+
+Analysis
+I decompiled the APK to analyze its code. Some critical methods such as doInBackground were not successfully decompiled, even using different Android and Java deobfuscators. Moreover, most of the app’s critical class and function names are obfuscated, therefore I renamed them in this blogpost to make it easier to follow. At the end of this blogpost, I match the short names with the real names in the APK, which might help in case you want to research Spymax further. Furthermore, I used Frida to analyze the app dynamically.
+
+A quick static analysis of the app shows that it expectedly requires many permissions, such as access to camera, microphone, storage, location and others. Additionally, the service AccessibilityService requires the “android.permission.BIND_ACCESSIBILITY_SERVICE” permission for keylogging attacks.
+
+Run Spymax run
+Spymax app asks for a long list of permissions when the victim starts it for the first time. Additionally, the main activity SpymaxMainActivity starts the main Service MainService. Afterwards, the app does not need to be started anymore by the user. Whenever the phone boots up, Spymax’s boradcast receiver BootReceiver catches the broadcast intent “android.intent.action.BOOT_COMPLETED”, therefore the app automatically starts. BootReceiver eventually starts MainService.
+
+This behavior is found in many apps (malicious or not), which want to start automatically once the phone boots up. However, I was expecting more persistence techniques from the app. Unlike other malware and spyware apps, the Spymax app neither hides itself after the first run, nor does it implement techniques to restart itself once terminated.
+
+MainService completes the initiation routine of the app, which includes 2 main actions:
+
+1. Initiate the connection with Command and Control server (C&C)
+Class TxRx acts as the interface between the app and C&C. It takes care of maintaining the connection, as well as sending and receiving data from/to C&C. Its method cnn runs a Thread to (re)initiate the main TCP socket TxRx.k that handles the main communication, as shown in the figure below. Click on the figure to open it in full size.
+
+ 
+
+
+TxRx.cnn() initiates main connection with C&C
+ 
+
+From now on, TxRx.in and TxRx.out hold incoming and outgoing data. Moreover, the method cnn starts the method rc, which runs another Thread to receive data from C&C.
+
+2. Start the main brain of the malware
+MainService contains an inner class ta, whose doInBackground method acts as the main brain of the Spymax app. It is an AsyncTask that runs in a separate thread to take actions based on the commands received from C&C as we will see later.
+
+Now the Spymax app is ready for the attacker’s wishes, so let’s see what happens when the connection establishes with the C&C.
+
+Command handling
+After the connection is established with C&C, the app listens to the received commands and handles them. The flow goes as follows:
+
+1. TxRx.rc() receives the message
+As mentioned before, the method TxRx.rc listens to any incoming messages received by the main Socket TxRx.k. Messages between the app and C&C are compressed in gzip format. Therefore, they are first decompressed using the UtilClass.dZp method. Then the decompressed message is cast into a RxCommand object. Any RxCommand object has 2 parameters:
+
+Byte Array byt – holds all bytes of decompressed message, including files sent by C&C
+String str – the decompressed message converted to String. It usually holds the command sent by C&C
+Finally, the method TxRx.rc adds the received command object to the List MainService.Li, which acts as a queue of the received commands that are not yet executed.
+
+The following snippet of rc method highlights its role:
+
+TxRx.rc
+TxRx.rc: sending zipped messages to C&C
+ 
+
