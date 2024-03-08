@@ -1,0 +1,31 @@
+## Evil-Droid Framework . version 0.3 
+     
+## Description:
+    Evil-Droid is a framework that create & generate & embed apk payload to penetrate android platforms
+ 
+ 
+ 
+
+## Dependencies :
+  1 - metasploit-framework
+	2 - xterm
+	3 - Zenity
+	4 - Aapt
+	5 - Apktool
+	6 - Zipalign
+
+## Download/Config/Usage:
+    1? - Download the tool from github
+         git clone https://github.com/M4sc3r4n0/Evil-Droid.git
+
+    2? - Set script execution permission
+         cd Evil-Droid
+         chmod +x evil-droid
+
+
+    4?- Run Evil-Droid Framework :
+       ./evil-droid
+         see options bellow	   
+      
+
+ 
